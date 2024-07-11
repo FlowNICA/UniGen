@@ -179,14 +179,14 @@ int main(int argc, char *argv[]) {
 	int decay, child[2];
 	in >> t >> x >> y >> z;
 	in >> e >> px >> py >> pz >> dust;
-	in >> ityp >> iso3 >> ichg >> mate >> dust >> dust;
+	in >> ityp >> iso3 >> ichg >> mate >> status >> dust;
 	if (filetype==13) { // freeze-out coordinates
 	  in >> t >> x >> y >> z;
 	  in >> e >> px >> py >> pz;
 	}
 	if (in.fail()) bomb("while reading tracks");
-	status=parent_decay=decay=child[0]=child[1]=0;
-  parent=-1;
+	parent_decay=decay=child[0]=child[1]=0;
+  parent=0;
 	ev->AddParticle(i, trapco(ityp, ichg), status, parent,
 			parent_decay, mate-1, decay, child,
 			px, py, pz, e, x, y, z, t, weight);
