@@ -164,6 +164,7 @@ int main(int argc, char *argv[]) {
     char pee;
     while (1) { // loop over time slices
       int mult;
+      bool is_collision = 0; 
       double step_time;
       pee=in.peek();
       if (pee=='U') break; 
@@ -187,6 +188,7 @@ int main(int argc, char *argv[]) {
 	if (in.fail()) bomb("while reading tracks");
 	parent_decay=decay=child[0]=child[1]=0;
   parent=0;
+  	is_collision = bool(status);
 	ev->AddParticle(i, trapco(ityp, ichg), status, parent,
 			parent_decay, mate-1, decay, child,
 			px, py, pz, e, x, y, z, t, weight);
@@ -194,6 +196,7 @@ int main(int argc, char *argv[]) {
       do in.get(c); while (c!='\n');
       ev->SetStepNr(step_nr++);
       ev->SetStepT(step_time);
+      if(!is_collision) continue;
       nout += tr->Fill();
     }
     if (pee==EOF) break; 
