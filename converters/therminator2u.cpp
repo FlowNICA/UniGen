@@ -1,20 +1,21 @@
 /**
-* UniGen - Common Format for Event Generators in High-energy and Nuclear Physics
-* Copyright (C) 2006 - 2019 GSI Helmholtzzentrum fuer Schwerionenforschung GmbH
-*
-* This program is free software: you can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation, either version 3 of the License, or
-* (at your option) any later version.
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program.  If not, see <https://www.gnu.org/licenses/>.
-*/
+ * UniGen - Common Format for Event Generators in High-energy and Nuclear
+ * Physics Copyright (C) 2006 - 2019 GSI Helmholtzzentrum fuer
+ * Schwerionenforschung GmbH
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
 
 ///////////////////////////////////////////////////////////////////////////////
 // therminator2u reads Therminator 2 root files  and converts them to
@@ -26,9 +27,9 @@
 // D.Wielanek, July 2012
 ///////////////////////////////////////////////////////////////////////////////
 
-#include <iostream>
 #include <fstream>
 #include <iomanip>
+#include <iostream>
 #include <map>
 #include <string>
 
@@ -38,10 +39,9 @@
 #include <TString.h>
 #include <TTree.h>
 
-#include "URun.h"
 #include "UEvent.h"
 #include "UParticle.h"
-
+#include "URun.h"
 
 struct particle {
   Float_t mass;
@@ -76,8 +76,8 @@ struct model_parameters {
   Float_t ModelParameters_CentralityMax;
   Float_t ModelParameters_ImpactParameter;
   Float_t ModelParameters_TempI;
-  Char_t  ModelParameters_DeviceName[30];
-  Char_t  ModelParameters_CollidingSystem[30];
+  Char_t ModelParameters_DeviceName[30];
+  Char_t ModelParameters_CollidingSystem[30];
 };
 
 /*****************************************************************************/
@@ -87,8 +87,7 @@ struct model_parameters {
 /* Note: technically both particl and all the local variables in this function
    could be made const, however this causes the compiler to complain because
    of signature of UEvent::AddParticle. */
-void ReadParticle(UEvent *outputEvent, particle &particl)
-{
+void ReadParticle(UEvent *outputEvent, particle &particl) {
   // 1 means primordial particle, 0 all others
   Int_t status = (particl.fathereid == -1) ? 1 : 0;
 
@@ -96,18 +95,20 @@ void ReadParticle(UEvent *outputEvent, particle &particl)
 
   Int_t child[2] = {0, 0};
 
-  outputEvent->AddParticle(particl.eid, particl.pid, status, particl.fathereid, 0, 0, decay, child, particl.px, particl.py, particl.pz, particl.e, particl.x, particl.y, particl.z, particl.t, 1.);
+  outputEvent->AddParticle(particl.eid, particl.pid, status, particl.fathereid,
+                           0, 0, decay, child, particl.px, particl.py,
+                           particl.pz, particl.e, particl.x, particl.y,
+                           particl.z, particl.t, 1.);
   return;
 }
 
 /*****************************************************************************/
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
   if (argc != 3) {
     std::cout << "usage:   " << argv[0] << " inpfile outfile\n"
-        << "example: " << argv[0] << " input.root ftn14.root "
-        << std::endl;
+              << "example: " << argv[0] << " input.root ftn14.root "
+              << std::endl;
     return 0;
   }
   const char *inpfile = argv[1];
@@ -155,11 +156,11 @@ int main(int argc, char *argv[])
   int n = 0;
   while (n < total_particles) {
     if ((events_processed % notifyEvery) == 0)
-      std::cout << "event "  << std::setw(5) << n << std::endl;
+      std::cout << "event " << std::setw(5) << n << std::endl;
 
     /* Event has just begun so set its header... */
     outputEvent->Clear();
-    outputEvent->SetB(0); // unknown?
+    outputEvent->SetB(0);    // unknown?
     outputEvent->SetPhi(0.); // unknown?
     outputEvent->SetNes(0);
     outputEvent->SetEventNr(++events_processed);
@@ -190,13 +191,13 @@ int main(int argc, char *argv[])
   std::cout << events_processed << " events processed\n";
 
   model_parameters model;
-  TTree *partree = static_cast<TTree*>(infile->Get("parameters"));
+  TTree *partree = static_cast<TTree *>(infile->Get("parameters"));
   partree->SetBranchAddress("ModelParameters", &model);
   partree->GetEntry(0);
 
   /* Create the run header. */
   std::string generator = "Therminator";
-  generator.append("2"); //version
+  generator.append("2"); // version
   const std::string comment =
       std::string(model.ModelParameters_CollidingSystem) + ' ' +
       std::string(model.ModelParameters_DeviceName);
@@ -204,12 +205,11 @@ int main(int argc, char *argv[])
   // of it is available but would have to be extracted from strings; this
   // will have to be implemented.
   std::cout << "Note: storing the centrality range as bMin and bMax"
-      << std::endl;
-  URun *runHeader = new URun(generator.data(), comment.data(),
-                             0, 0, 0., 0, 0, 0.,
-                             model.ModelParameters_CentralityMin,
-                             model.ModelParameters_CentralityMax,
-                             -1, 0, 0, 0., events_processed);
+            << std::endl;
+  URun *runHeader = new URun(generator.data(), comment.data(), 0, 0, 0., 0, 0,
+                             0., model.ModelParameters_CentralityMin,
+                             model.ModelParameters_CentralityMax, -1, 0, 0, 0.,
+                             events_processed);
   runHeader->Write();
   outputFile->Write();
   outputFile->Close();

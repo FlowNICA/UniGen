@@ -1,49 +1,50 @@
 /**
-* UniGen - Common Format for Event Generators in High-energy and Nuclear Physics
-* Copyright (C) 2006 - 2019 GSI Helmholtzzentrum fuer Schwerionenforschung GmbH
-*
-* This program is free software: you can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation, either version 3 of the License, or
-* (at your option) any later version.
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program.  If not, see <https://www.gnu.org/licenses/>.
-*/
+ * UniGen - Common Format for Event Generators in High-energy and Nuclear
+ * Physics Copyright (C) 2006 - 2019 GSI Helmholtzzentrum fuer
+ * Schwerionenforschung GmbH
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
 
 ///////////////////////////////////////////////////////////////////////////////
 // urqmd2u reads UrQMD events from the ftn13 or ftn14 ascii files and
 // converts them to the UniGen format and saves on a root file.
 //
-// ftn14 contains snapshots at given times (event steps). The event steps 
-// are converted to separate events. 
+// ftn14 contains snapshots at given times (event steps). The event steps
+// are converted to separate events.
 //
-// ftn13 contains the final snapshot and the freeze-out coordinates. 
-// The freeze-out coordinates are used. The final snapshot coordinates 
+// ftn13 contains the final snapshot and the freeze-out coordinates.
+// The freeze-out coordinates are used. The final snapshot coordinates
 // are discarded.
 //
 // D.Miskowiec, February 2006
 ///////////////////////////////////////////////////////////////////////////////
-#include <iostream>
 #include <fstream>
 #include <iomanip>
+#include <iostream>
 #include <map>
 
-#include <TFile.h>
-#include <TTree.h>
-#include <TString.h>
 #include <TBranch.h>
+#include <TFile.h>
 #include <TMath.h>
+#include <TString.h>
+#include <TTree.h>
 
-#include "URun.h"
 #include "UEvent.h"
-#include "UParticle.h"
 #include "UPIDConverter.h"
+#include "UParticle.h"
+#include "URun.h"
 
 using namespace std;
 
@@ -53,12 +54,11 @@ UEvent *ev;
 
 /*****************************************************************************/
 void bomb(const char *myst) {
-  cerr<<"Error: "<<myst<<", bombing"<<endl;
+  cerr << "Error: " << myst << ", bombing" << endl;
   exit(-1);
 }
 /*****************************************************************************/
-int trapco(int ityp, int ichg)
-{
+int trapco(int ityp, int ichg) {
   // translate UrQMD pid code to pdg code
 
   /* UrQMD PIDs are in fact composite - a particle is fully defined by the
@@ -111,13 +111,14 @@ int main(int argc, char *argv[]) {
   outfile = argv[2];
   nevents = atoi(argv[3]);
 
-  int nout=0;
+  int nout = 0;
   in.open(inpfile);
-  if (in.fail()) bomb("cannot open input file");
+  if (in.fail())
+    bomb("cannot open input file");
 
   fi = TFile::Open(outfile, "RECREATE", "UrQMD");
 
-  tr = new TTree("events","UrQMD tree");
+  tr = new TTree("events", "UrQMD tree");
   ev = new UEvent();
   tr->Branch("event", "UEvent", &ev);
 
@@ -125,81 +126,88 @@ int main(int argc, char *argv[]) {
 
   const int bunch = 10;
 
-  int events_processed=0;
-  for (int n=0; n<nevents; n++) {
-    if ((n%bunch)==0) cout << "event "  << setw(5) << n << endl;
+  int events_processed = 0;
+  for (int n = 0; n < nevents; n++) {
+    if ((n % bunch) == 0)
+      cout << "event " << setw(5) << n << endl;
     string line;
 
     in >> dust >> dust >> version >> dust >> dust;
     in >> dust >> filetype >> dust >> dust >> dust >> aproj >> zproj;
-    in >> dust >> dust >> dust >> atarg >> ztarg; 
+    in >> dust >> dust >> dust >> atarg >> ztarg;
     in >> dust >> dust >> dust >> beta >> dust >> dust;
     in >> dust >> b >> bmin >> bmax >> dust >> sigma;
     in >> dust >> eos >> dust >> elab >> dust >> sqrts >> dust >> plab;
     in >> dust >> nr >> dust >> dust >> dust;
     in >> dust >> dust >> time >> dust >> dtime;
-    in.ignore(777,'\n'); // ignore the rest of the line
+    in.ignore(777, '\n'); // ignore the rest of the line
 
     comment.clear();
     // read 3 lines of options and 4 lines of params
-    for (int i=0; i<100; i++) {
-      getline(in,line);
-      if(0 == line.substr(0, 4).compare("pvec"))
-      {
-          break;
+    for (int i = 0; i < 100; i++) {
+      getline(in, line);
+      if (0 == line.substr(0, 4).compare("pvec")) {
+        break;
       }
       comment.append(line);
       comment.append("\n");
     }
-    //in.ignore(777,'\n'); 
+    // in.ignore(777,'\n');
 
     ev->Clear();
     ev->SetEventNr(nr);
     ev->SetB(b);
     ev->SetPhi(0);
-    ev->SetNes((int) (time/dtime));
+    ev->SetNes((int)(time / dtime));
     events_processed++;
 
-    int step_nr=0;
+    int step_nr = 0;
     char pee;
     while (1) { // loop over time slices
       int mult;
-      bool is_collision = 0; 
+      bool is_collision = 0;
       double step_time;
-      pee=in.peek();
-      if (pee=='U') break; 
-      if (pee==EOF) break; 
-      in >> mult >> step_time; 
-      in.ignore(777,'\n'); // ignore the rest of the line
-      getline(in,line);
+      pee = in.peek();
+      if (pee == 'U')
+        break;
+      if (pee == EOF)
+        break;
+      in >> mult >> step_time;
+      in.ignore(777, '\n'); // ignore the rest of the line
+      getline(in, line);
       ev->SetComment(line.data());
-      for (int i=0;  i<mult; i++) {
-	double t,x,y,z,e,px,py,pz;
-	double weight = 1.0;
-	int ityp, iso3, ichg, status, parent, parent_decay, mate;
-	int decay, child[2];
-	in >> t >> x >> y >> z;
-	in >> e >> px >> py >> pz >> dust;
-	in >> ityp >> iso3 >> ichg >> mate >> status >> dust;
-	if (filetype==13) { // freeze-out coordinates
-	  in >> t >> x >> y >> z;
-	  in >> e >> px >> py >> pz;
-	}
-	if (in.fail()) bomb("while reading tracks");
-	parent_decay=decay=child[0]=child[1]=0;
-  parent=0;
-  	is_collision = bool(status);
-	ev->AddParticle(i, trapco(ityp, ichg), status, parent,
-			parent_decay, mate-1, decay, child,
-			px, py, pz, e, x, y, z, t, weight);
+      for (int i = 0; i < mult; i++) {
+        double t, x, y, z, e, px, py, pz;
+        double weight = 1.0;
+        int ityp, iso3, ichg, status, parent, parent_decay, mate;
+        int decay, child[2];
+        in >> t >> x >> y >> z;
+        in >> e >> px >> py >> pz >> dust;
+        in >> ityp >> iso3 >> ichg >> mate >> status >> dust;
+        if (filetype == 13) { // freeze-out coordinates
+          in >> t >> x >> y >> z;
+          in >> e >> px >> py >> pz;
+        }
+        if (in.fail())
+          bomb("while reading tracks");
+        parent_decay = decay = child[0] = child[1] = 0;
+        parent = 0;
+        is_collision = bool(status);
+        ev->AddParticle(i, trapco(ityp, ichg), status, parent, parent_decay,
+                        mate - 1, decay, child, px, py, pz, e, x, y, z, t,
+                        weight);
       }
-      do in.get(c); while (c!='\n');
+      do
+        in.get(c);
+      while (c != '\n');
       ev->SetStepNr(step_nr++);
       ev->SetStepT(step_time);
-      if(!is_collision) continue;
+      if (!is_collision)
+        continue;
       nout += tr->Fill();
     }
-    if (pee==EOF) break; 
+    if (pee == EOF)
+      break;
   }
   in.close();
   cout << events_processed << " events processed\n";
@@ -209,15 +217,13 @@ int main(int argc, char *argv[]) {
   string generator = "UrQMD";
   generator.append(version);
   double m = 0.938271998;
-  double ecm = sqrts/2; // energy per nucleon in cm
-  double pcm = sqrt(ecm*ecm-m*m); // momentum per nucleon in cm
-  double gamma = 1.0/sqrt(1-beta*beta); 
-  double pproj = gamma*(+pcm-beta*ecm);
-  double ptarg = gamma*(-pcm-beta*ecm);
-  ru = new URun(generator.data(), comment.data(), 
-		aproj, zproj, pproj, 
-		atarg, ztarg, ptarg, 
-		bmin, bmax, -1, 0, 0, sigma, events_processed);
+  double ecm = sqrts / 2;               // energy per nucleon in cm
+  double pcm = sqrt(ecm * ecm - m * m); // momentum per nucleon in cm
+  double gamma = 1.0 / sqrt(1 - beta * beta);
+  double pproj = gamma * (+pcm - beta * ecm);
+  double ptarg = gamma * (-pcm - beta * ecm);
+  ru = new URun(generator.data(), comment.data(), aproj, zproj, pproj, atarg,
+                ztarg, ptarg, bmin, bmax, -1, 0, 0, sigma, events_processed);
   ru->Write();
   fi->Write();
   fi->Close();

@@ -1,47 +1,45 @@
 /**
-* UniGen - Common Format for Event Generators in High-energy and Nuclear Physics
-* Copyright (C) 2006 - 2019 GSI Helmholtzzentrum fuer Schwerionenforschung GmbH
-*
-* This program is free software: you can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation, either version 3 of the License, or
-* (at your option) any later version.
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program.  If not, see <https://www.gnu.org/licenses/>.
-*/
+ * UniGen - Common Format for Event Generators in High-energy and Nuclear
+ * Physics Copyright (C) 2006 - 2019 GSI Helmholtzzentrum fuer
+ * Schwerionenforschung GmbH
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
 
 // ------------------------------------------------------------------
 // -----                        epos2u                          -----
 // -----            Created in March 2013 by M. Szuba           -----
 // ------------------------------------------------------------------
 
-#include <iostream>
 #include <fstream>
+#include <iostream>
 #include <sstream>
 
-#include <TString.h>
 #include <TFile.h>
-#include <TTree.h>
 #include <TMath.h>
+#include <TString.h>
+#include <TTree.h>
 
-#include "URun.h"
 #include "UEvent.h"
-#include "UParticle.h"
 #include "UPIDConverter.h"
+#include "UParticle.h"
+#include "URun.h"
 
 using namespace std;
 
-
-Bool_t ReadOptnsFile(const char *fileName,
-                     string &model,
-                     Int_t &aProj, Int_t &zProj,
-                     Int_t &aTarg, Int_t &zTarg,
+Bool_t ReadOptnsFile(const char *fileName, string &model, Int_t &aProj,
+                     Int_t &zProj, Int_t &aTarg, Int_t &zTarg,
                      Double32_t &pProj, Double32_t &bMin, Double32_t &bMax,
                      Double32_t &phiMin, Double32_t &phiMax,
                      Int_t &evReqFromModel,
@@ -49,9 +47,7 @@ Bool_t ReadOptnsFile(const char *fileName,
 Bool_t ReadEventHeaderFormat(istringstream &recordStream);
 Bool_t ReadParticleFormat(istringstream &recordStream);
 
-
-int main(int argc, char* argv[])
-{
+int main(int argc, char *argv[]) {
   string model;
   Int_t aProj;
   Int_t zProj;
@@ -68,8 +64,8 @@ int main(int argc, char* argv[])
 
   if ((argc < 4) || (argc > 5)) {
     cout << "Usage:\n"
-        << argv[0] << "optnsFileName inputFileName outputFileName [maxEvents]"
-        << endl;
+         << argv[0] << "optnsFileName inputFileName outputFileName [maxEvents]"
+         << endl;
     return 1;
   }
   const char *optnsFileName = argv[1];
@@ -102,8 +98,8 @@ int main(int argc, char* argv[])
   tree->Branch("event", "UEvent", &event);
 
   /* Reduce the number of events to process if requested and necessary. */
-  const UInt_t nEvents = (evReqFromModel > maxEvents) ?
-      maxEvents : evReqFromModel;
+  const UInt_t nEvents =
+      (evReqFromModel > maxEvents) ? maxEvents : evReqFromModel;
 
   /* We declare this outside the loop because in our present
      implementation, we do not actually parse children - thus never
@@ -124,7 +120,7 @@ int main(int argc, char* argv[])
     event->SetEventNr(eventNo);
     event->SetB(impactParameter);
 
-    for(UInt_t iPa = 0; iPa < expectedParticles; ++iPa) {
+    for (UInt_t iPa = 0; iPa < expectedParticles; ++iPa) {
       UInt_t particleNo = 0;
       Int_t originalPID = 0;
       Double32_t xMomentum = 0.;
@@ -140,15 +136,14 @@ int main(int argc, char* argv[])
       getline(fin, line);
       istringstream particleDataStream(line);
       string dummy;
-      particleDataStream >> particleNo >> originalPID >> xMomentum >> yMomentum
-                         >> zMomentum >> energy >> mass >> dummy >> dummy
-                         >> dummy >> xFormation >> yFormation >> zFormation
-                         >> tFormation;
+      particleDataStream >> particleNo >> originalPID >> xMomentum >>
+          yMomentum >> zMomentum >> energy >> mass >> dummy >> dummy >> dummy >>
+          xFormation >> yFormation >> zFormation >> tFormation;
 
       /* Original PID can be in one of several conventions, including
-         PDG. We know which one thanks to having parsed the optns file, therefore
-         as long as appropriate conversion tables are available we can easily get
-         a corresponding PDG code. */
+         PDG. We know which one thanks to having parsed the optns file,
+         therefore as long as appropriate conversion tables are available we can
+         easily get a corresponding PDG code. */
       const Int_t pdgCode =
           UPIDConverter::Instance()->GetPDGCode(originalPID, pidConvention);
       if (pdgCode == 0) {
@@ -156,9 +151,9 @@ int main(int argc, char* argv[])
         continue;
       }
 
-      event->AddParticle(iPa, pdgCode, 1, 0, 0, 0, 0, child,
-                         xMomentum,yMomentum, zMomentum, energy,
-                         xFormation, yFormation, zFormation, tFormation, 1.);
+      event->AddParticle(iPa, pdgCode, 1, 0, 0, 0, 0, child, xMomentum,
+                         yMomentum, zMomentum, energy, xFormation, yFormation,
+                         zFormation, tFormation, 1.);
     }
 
     /* Write the current event */
@@ -187,16 +182,12 @@ int main(int argc, char* argv[])
   return 0;
 }
 
-
-Bool_t ReadOptnsFile(const char *fileName,
-                     string &model,
-                     Int_t &aProj, Int_t &zProj,
-                     Int_t &aTarg, Int_t &zTarg,
+Bool_t ReadOptnsFile(const char *fileName, string &model, Int_t &aProj,
+                     Int_t &zProj, Int_t &aTarg, Int_t &zTarg,
                      Double32_t &pProj, Double32_t &bMin, Double32_t &bMax,
                      Double32_t &phiMin, Double32_t &phiMax,
                      Int_t &evReqFromModel,
-                     UPIDConverter::EConvention &pidConvention)
-{
+                     UPIDConverter::EConvention &pidConvention) {
   int idProj = 0;
   int idTarg = 0;
   Bool_t eventHeaderFormatOkay = kFALSE;
@@ -230,7 +221,8 @@ Bool_t ReadOptnsFile(const char *fileName,
       string value;
       wordStream >> value;
       if (value != "target") {
-        Error("epos2u", "Only output in fixed-target frame is presently supported");
+        Error("epos2u",
+              "Only output in fixed-target frame is presently supported");
         return kFALSE;
       }
     } else if (word == "model")
@@ -301,21 +293,20 @@ Bool_t ReadOptnsFile(const char *fileName,
      by particle ID rather than atomic and mass number. Conversion itself
      ought to work without problems, though. */
   if ((zProj == -1) && (aProj == 1) && (idProj != 0))
-    Warning("epos2u",
-            "Non-nucleonic projectile (id=%d) detected. "
-            "URun header will be incomplete",
-            UPIDConverter::Instance()->GetPDGCode(idProj,
-                                                  UPIDConverter::eWerner));
+    Warning(
+        "epos2u",
+        "Non-nucleonic projectile (id=%d) detected. "
+        "URun header will be incomplete",
+        UPIDConverter::Instance()->GetPDGCode(idProj, UPIDConverter::eWerner));
   if ((zTarg == -1) && (aTarg == 1) && (idTarg != 0))
-    Warning("epos2u",
-            "Non-nucleonic target (epos id=%d) detected. "
-            "URun header will be incomplete",
-            UPIDConverter::Instance()->GetPDGCode(idTarg,
-                                                  UPIDConverter::eWerner));
+    Warning(
+        "epos2u",
+        "Non-nucleonic target (epos id=%d) detected. "
+        "URun header will be incomplete",
+        UPIDConverter::Instance()->GetPDGCode(idTarg, UPIDConverter::eWerner));
 
   return kTRUE;
 }
-
 
 /* Check whether the EPOS event-header record matches our expectations,
    i.e. event number as the first field followed by:
@@ -325,16 +316,11 @@ Bool_t ReadOptnsFile(const char *fileName,
      record event  nevt nptl b [...]  endrecord
    In the future we may actually adjust our record-reading procedure
    in accordance with this string instead. */
-Bool_t ReadEventHeaderFormat(istringstream &recordStream)
-{
+Bool_t ReadEventHeaderFormat(istringstream &recordStream) {
   string word;
 
   const UInt_t keywordNumber = 3;
-  const string keywordSequence[keywordNumber] = {
-    "nevt",
-    "nptl",
-    "b"
-  };
+  const string keywordSequence[keywordNumber] = {"nevt", "nptl", "b"};
   UInt_t keywordsToGo = keywordNumber;
 
   while (!recordStream.eof()) {
@@ -348,7 +334,6 @@ Bool_t ReadEventHeaderFormat(istringstream &recordStream)
 
   return kFALSE;
 }
-
 
 /* Check whether the EPOS particler record matches our expectations,
    i.e. particle index as the first field followed by:
@@ -364,32 +349,16 @@ Bool_t ReadEventHeaderFormat(istringstream &recordStream)
      - father PID
      - mother PID
    In EPOS optns file this would look along the lines of:
-   record particle  i id p1 p2 p3 p4 p5 fa mo st x1 x2 x3 x4 idfa idmo [...]  endrecord
-   In the future we may actually adjust our record-reading procedure
+   record particle  i id p1 p2 p3 p4 p5 fa mo st x1 x2 x3 x4 idfa idmo [...]
+   endrecord In the future we may actually adjust our record-reading procedure
    in accordance with this string instead. */
-Bool_t ReadParticleFormat(istringstream &recordStream)
-{
+Bool_t ReadParticleFormat(istringstream &recordStream) {
   string word;
 
   const UInt_t keywordNumber = 16;
   const string keywordSequence[keywordNumber] = {
-    "i",
-    "id",
-    "p1",
-    "p2",
-    "p3",
-    "p4",
-    "p5",
-    "fa",
-    "mo",
-    "st",
-    "x1",
-    "x2",
-    "x3",
-    "x4",
-    "idfa",
-    "idmo"
-  };
+      "i",  "id", "p1", "p2", "p3", "p4", "p5",   "fa",
+      "mo", "st", "x1", "x2", "x3", "x4", "idfa", "idmo"};
   UInt_t keywordsToGo = keywordNumber;
 
   while (!recordStream.eof()) {
